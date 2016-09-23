@@ -69,6 +69,12 @@
 have constants, methods and arguments highlighted in color."
   :group 'robe)
 
+(defcustom robe-visit-rubygems nil
+  "When non-nil, robe will open files that appear to be part
+of installed rubygems with `view-mode' active."
+  :type 'boolean
+  :group 'robe)
+
 (defvar robe-ruby-path
   (let ((current (or load-file-name (buffer-file-name))))
     (expand-file-name "lib" (file-name-directory current)))
@@ -344,13 +350,18 @@ If invoked with a prefix or no symbol at point, delegate to `robe-ask'."
       (forward-line (1- (robe-spec-line spec)))
       (back-to-indentation))))
 
+(defun robe--gem-path-p (path)
+  (string-match-p "ruby/gems" path))
+
 (defun robe-find-file (file &optional pop-to-buffer)
   (unless (file-exists-p file)
     (error "'%s' does not exist" file))
   (if pop-to-buffer
       (pop-to-buffer (find-file-noselect file))
     (ring-insert find-tag-marker-ring (point-marker))
-    (find-file file)))
+    (find-file file))
+  (when (and robe-visit-rubygems (robe--gem-path-p file))
+    (view-mode-enable)))
 
 (defun robe-rails-refresh ()
   "Pick up changes in the loaded classes and detect new files.
